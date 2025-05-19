@@ -2,24 +2,28 @@
   <div class="candidate-table-container">
     <h3>Real-Time Transactions</h3>
     <div class="table-wrapper">
-      <table>
-        <thead>
-        <tr>
-          <th>Time</th>
-          <th>Price</th>
-          <th>Volume</th>
-          <th>Value</th>
-        </tr>
-        </thead>
-        <tbody>
-        <tr v-for="tx in displayedTransactions" :key="tx.n">
-          <td>{{ tx.t }}</td>
-          <td>{{ tx.p }}</td>
-          <td>{{ tx.v }}</td>
-          <td>{{ tx.u }}</td>
-        </tr>
-        </tbody>
-      </table>
+      <RecycleScroller
+        :items="displayedTransactions"
+        :item-size="rowHeight"
+        key-field="n"
+        class="virtual-tbody"
+        :buffer="buffer"
+      >
+        <template #before>
+          <tr>
+            <th>Time</th>
+            <th>Price</th>
+            <th>Volume</th>
+            <th>Value</th>
+          </tr>
+        </template>
+        <template #default="{ item }">
+          <td>{{ item.t }}</td>
+          <td>{{ item.p }}</td>
+          <td>{{ item.v }}</td>
+          <td>{{ item.u }}</td>
+        </template>
+      </RecycleScroller>
       <div v-if="isLoading" class="loading-overlay">Loading initial data...</div>
     </div>
     <div class="stats">
@@ -28,6 +32,7 @@
   </div>
 </template>
 <script>
+import { RecycleScroller } from 'vue-virtual-scroller';
 let transactionCounter = 0;
 
 function generateTransaction() {
@@ -48,18 +53,21 @@ function generateTransaction() {
 
 export default {
   props: {},
+  components: { RecycleScroller },
   data() {
     return {
       transactions: [],
       isLoading: true,
       updateInterval: null,
       initialBatchSize: 10000,
-      updateIntervalMs: 200
+      updateIntervalMs: 200,
+      buffer: 20,
+      rowHeight: 40
     };
   },
   computed: {
     displayedTransactions() {
-      return this.transactions.slice().reverse();
+      return this.transactions;
     }
   },
   methods: {
@@ -69,7 +77,7 @@ export default {
       for (let i = 0; i < this.initialBatchSize; i++) {
         initialBatch.push(generateTransaction());
       }
-      this.transactions = initialBatch;
+      this.transactions = initialBatch.reverse();
       this.isLoading = false;
       console.log("Initial data loaded.");
       this.startStreamingUpdates();
@@ -81,7 +89,7 @@ export default {
       console.log(`Starting streaming updates (1 transaction every ${this.updateIntervalMs}ms)...`);
       this.updateInterval = setInterval(() => {
         const newTransaction = generateTransaction();
-        this.transactions.push(newTransaction);
+        this.transactions.unshift(newTransaction);
       }, this.updateIntervalMs);
     },
     stopStreamingUpdates() {
@@ -98,20 +106,25 @@ export default {
   beforeUnmount() {
     this.stopStreamingUpdates();
   }
-}
+};
 </script>
 <style>
-body {
-  font-family: Arial, sans-serif;
-  background-color: #f4f4f4;
-  margin: 0;
-  padding: 20px;
+.vue-recycle-scroller__slot {
+  display: table-header-group;
+  width: 100%;
 }
-
-h1 {
-  text-align: center;
+.vue-recycle-scroller__item-wrapper {
+  display: table-row-group;
 }
-
+.vue-recycle-scroller__item-view {
+  display: table-row;
+}
+.virtual-tbody {
+  display: table;
+  width: 100%;
+  position: absolute !important;
+  height: 200px;
+}
 .candidate-table-container {
   max-width: 800px;
   margin: auto;
@@ -145,8 +158,9 @@ tr:hover {
 }
 
 .table-wrapper {
+  padding-bottom: 300px;
   max-height: 400px;
-  overflow-y: auto;
+  overflow-y: hidden;
   position: relative;
 }
 
