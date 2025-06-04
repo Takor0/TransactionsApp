@@ -24,7 +24,10 @@
           <td>{{ item.u }}</td>
         </template>
       </RecycleScroller>
-      <div v-if="isLoading" class="loading-overlay">Loading initial data...</div>
+      <div v-if="isLoading" class="loading-overlay">
+        <div class="loader" aria-hidden="true"></div>
+        <span class="loading-text">Loading initial data...</span>
+      </div>
     </div>
     <div class="stats">
       Total Transactions: {{ displayedTransactions.length }}
@@ -122,8 +125,6 @@ export default {
 .virtual-tbody {
   display: table;
   width: 100%;
-  position: absolute !important;
-  height: 200px;
 }
 .candidate-table-container {
   max-width: 800px;
@@ -158,9 +159,8 @@ tr:hover {
 }
 
 .table-wrapper {
-  padding-bottom: 300px;
-  max-height: 400px;
-  overflow-y: hidden;
+  height: 400px;
+  overflow-y: auto;
   position: relative;
 }
 
@@ -178,9 +178,26 @@ tr:hover {
   bottom: 0;
   background-color: rgba(255, 255, 255, 0.8);
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   font-size: 18px;
   color: #333;
+  z-index: 1;
+}
+
+.loader {
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #3498db;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+  margin-bottom: 10px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 </style>
